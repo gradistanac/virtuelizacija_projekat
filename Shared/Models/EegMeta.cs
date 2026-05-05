@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Shared.Models
 {
-    internal class EegMeta
+    public class EegMeta
     {
     }
 }
