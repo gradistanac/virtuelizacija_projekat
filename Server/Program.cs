@@ -14,11 +14,27 @@ namespace Server
     {
         static void Main(string[] args)
         {
-            NetTcpBinding binding = new NetTcpBinding();
-            binding.TransferMode = TransferMode.Streamed;
-            binding.MaxReceivedMessageSize = 10 * 1024 * 1024;
-            binding.SendTimeout = new TimeSpan(0, 10, 0);
-            binding.ReceiveTimeout = new TimeSpan(0, 10, 0);
+            ServiceHost host = new ServiceHost(typeof(EegService));
+
+            try
+            {
+                host.Open();
+
+                Console.WriteLine("Server je pokrenut.");
+                Console.WriteLine("Pritisnite ENTER za gasenje.");
+
+                Console.ReadLine();
+
+                host.Close();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.ToString());
+
+                Console.ReadLine();
+
+                host.Abort();
+            }
         }
     }
 }
