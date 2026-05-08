@@ -44,8 +44,10 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Contracts\IEegService.cs" />
+    <Compile Include="Models\DataFormatFault.cs" />
     <Compile Include="Models\EegMeta.cs" />
     <Compile Include="Models\EegSample.cs" />
+    <Compile Include="Models\ValidationFault.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup />
