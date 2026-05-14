@@ -51,13 +51,16 @@ namespace Server.Services
 
         public void WriteReject(EegSample sample, string reason)
         {
-            // pisanje u rejects.csv
             string date = DateTime.Now.ToString("yyyy-MM-dd");
             string rejectsPath = Path.Combine(_dataPath, _currentParticipantId, date, "rejects.csv");
 
+            string rawLine = $"{sample.Timestamp:dd/MM/yyyy HH:mm:ss},{sample.AF3},{sample.T7},{sample.Pz},{sample.T8},{sample.AF4}," +
+                             $"{sample.Attention},{sample.Engagement},{sample.Excitement},{sample.Interest},{sample.Relaxation},{sample.Stress}," +
+                             $"{sample.Battery},{sample.ContactQuality},{sample.SlideIndex},{sample.SetIndex},{sample.RowIndex}";
+
             using (StreamWriter rejectWriter = new StreamWriter(rejectsPath, append: true))
             {
-                rejectWriter.WriteLine($"{DateTime.Now:dd/MM/yyyy HH:mm:ss},{reason},{sample.RowIndex}");
+                rejectWriter.WriteLine($"{DateTime.Now:dd/MM/yyyy HH:mm:ss},{reason},{rawLine}");
             }
         }
 

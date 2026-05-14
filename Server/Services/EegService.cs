@@ -79,7 +79,7 @@ namespace Server.Services
             }
                 
 
-            // 6. Metrike između 0 i 100
+            // 6. Metrike između 0 i 1
             if (sample.Attention < 0 || sample.Attention > 1 ||
                 sample.Engagement < 0 || sample.Engagement > 1 ||
                 sample.Excitement < 0 || sample.Excitement > 1 ||
@@ -87,9 +87,9 @@ namespace Server.Services
                 sample.Relaxation < 0 || sample.Relaxation > 1 ||
                 sample.Stress < 0 || sample.Stress > 1)
             {
-                _fileManager.WriteReject(sample, "Metrike moraju biti između 0 i 100.");
+                _fileManager.WriteReject(sample, "Metrike moraju biti između 0 i 1.");
                 throw new FaultException<ValidationFault>(
-                    new ValidationFault { Message = "Metrike moraju biti između 0 i 100." });
+                    new ValidationFault { Message = "Metrike moraju biti između 0 i 1." });
             }
                 
 
@@ -122,6 +122,14 @@ namespace Server.Services
 
             return "Server primio poruku: " + message;
         }
+
+        public void SimulateDisconnect()
+        {
+            Console.WriteLine("[Test] Simulacija prekida veze — pozivam Dispose...");
+            Dispose();
+            Console.WriteLine("[Test] Dispose pozvan, resursi zatvoreni.");
+        }
+
 
         ~EegService()
         {

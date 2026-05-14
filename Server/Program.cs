@@ -25,6 +25,12 @@ namespace Server
 
                 Console.ReadLine();
 
+                Console.WriteLine("\n[Simulacija Dispose pattern-a pri prekidu sesije]");
+                var testService = new EegService();
+                testService.StartSession(new Shared.Models.EegMeta { ParticipantId = "test", FileName = "test.csv", TotalRows = 0, SchemaVersion = "1.0" });
+                testService.SimulateDisconnect();
+                Console.WriteLine("[Simulacija zavrsena]\n");
+
                 host.Close();
             }
             catch (Exception ex)
