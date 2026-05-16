@@ -5,9 +5,9 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Runtime.Serialization;
 using System.ServiceModel;
-using Shared.Models;
+using Common.Models;
 
-namespace Shared.Contracts
+namespace Common.Contracts
 {
     [ServiceContract]
     public interface IEegService

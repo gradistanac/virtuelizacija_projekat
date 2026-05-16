@@ -4,8 +4,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.ServiceModel;
-using Shared.Contracts;
-using Shared.Models;
+using Common.Contracts;
+using Common.Models;
 using Client.Services;
 
 namespace Client

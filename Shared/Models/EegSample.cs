@@ -5,7 +5,7 @@ using System.Runtime.Serialization;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Shared.Models
+namespace Common.Models
 {
     [DataContract]
     public class EegSample

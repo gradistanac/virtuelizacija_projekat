@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.ServiceModel;
 using Server.Services;
-using Shared.Contracts;
+using Common.Contracts;
 using System.ServiceModel.Channels;
 
 namespace Server
@@ -27,7 +27,7 @@ namespace Server
 
                 Console.WriteLine("\n[Simulacija Dispose pattern-a pri prekidu sesije]");
                 var testService = new EegService();
-                testService.StartSession(new Shared.Models.EegMeta { ParticipantId = "test", FileName = "test.csv", TotalRows = 0, SchemaVersion = "1.0" });
+                testService.StartSession(new Common.Models.EegMeta { ParticipantId = "test", FileName = "test.csv", TotalRows = 0, SchemaVersion = "1.0" });
                 testService.SimulateDisconnect();
                 Console.WriteLine("[Simulacija zavrsena]\n");
 
