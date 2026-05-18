@@ -31,16 +31,16 @@ namespace Server.Services
                 Directory.CreateDirectory(sessionPath);
 
             string sessionFilePath = Path.Combine(sessionPath, "session.csv");
+            bool isNewFile = !File.Exists(sessionFilePath);
             _sessionWriter = new StreamWriter(sessionFilePath, append: true);
 
-            // pisanje zaglavlja
-            _sessionWriter.WriteLine("Timestamp,AF3,T7,Pz,T8,AF4,Attention,Engagement," +
-                "Excitement,Interest,Relaxation,Stress,Battery,ContactQuality,SlideIndex,SetIndex,RowIndex");
+            if (isNewFile)
+                _sessionWriter.WriteLine("Timestamp,AF3,T7,Pz,T8,AF4,Attention,Engagement," +
+                    "Excitement,Interest,Relaxation,Stress,Battery,ContactQuality,SlideIndex,SetIndex,RowIndex");
         }
 
         public void WriteSample(EegSample sample)
         {
-            // pisanje reda u session.csv
             _sessionWriter.WriteLine($"{sample.Timestamp:dd/MM/yyyy HH:mm:ss}," +
                 $"{sample.AF3},{sample.T7},{sample.Pz},{sample.T8},{sample.AF4}," +
                 $"{sample.Attention},{sample.Engagement},{sample.Excitement}," +
@@ -66,7 +66,6 @@ namespace Server.Services
 
         public void CloseSession()
         {
-            // zatvaranje StreamWriter-a
             if (_sessionWriter != null)
             {
                 _sessionWriter.Flush();

@@ -20,16 +20,10 @@ namespace Server
             {
                 host.Open();
 
-                Console.WriteLine("Server je pokrenut.");
-                Console.WriteLine("Pritisnite ENTER za gasenje.");
+                Console.WriteLine("Server pokrenut.");
+                Console.WriteLine("Pritisni ENTER za kraj.");
 
                 Console.ReadLine();
-
-                Console.WriteLine("\n[Simulacija Dispose pattern-a pri prekidu sesije]");
-                var testService = new EegService();
-                testService.StartSession(new Common.Models.EegMeta { ParticipantId = "test", FileName = "test.csv", TotalRows = 0, SchemaVersion = "1.0" });
-                testService.SimulateDisconnect();
-                Console.WriteLine("[Simulacija zavrsena]\n");
 
                 host.Close();
             }

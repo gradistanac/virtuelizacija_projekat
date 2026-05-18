@@ -18,9 +18,6 @@ namespace Client.Services
             var result = new List<(string participantId, List<EegSample> samples)>();
 
             string[] files = Directory.GetFiles(folderPath, "*.csv", SearchOption.AllDirectories);
-            
-
-            // SORTING:
             files = files.OrderBy(f => int.Parse(Path.GetFileName(f).Split('_')[1])).ToArray();
             
             foreach (string filePath in files)
@@ -29,19 +26,19 @@ namespace Client.Services
                 string[] parts = fileName.Split('_');
                 string participantId = parts[1];
 
-                List<EegSample> samples = ReadFile(filePath, participantId);
+                List<EegSample> samples = ReadFile(filePath);
                 result.Add((participantId, samples));
             }
             return result;
         }
 
-        public List<EegSample> ReadFile(string filePath, string participantId)
+        public List<EegSample> ReadFile(string filePath)
         {
             var samples = new List<EegSample>();
 
             using (StreamReader reader = new StreamReader(filePath))
             {
-                string headerLine = reader.ReadLine();
+                reader.ReadLine(); // preskoci zaglavlje
 
                 string line;
                 int rowIndex = 0;

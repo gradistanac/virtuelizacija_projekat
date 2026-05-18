@@ -20,7 +20,5 @@ namespace Common.Contracts
         string PushSample(EegSample sample);
         [OperationContract]
         string EndSession();
-        [OperationContract]
-        string Ping(string message);
     }
 }

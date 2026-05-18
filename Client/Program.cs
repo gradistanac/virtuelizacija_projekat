@@ -24,7 +24,7 @@ namespace Client
                 {
                     foreach (var (participantId, samples) in allFiles)
                     {
-                        Console.WriteLine($"Slanje podataka za ispitanika: {participantId}");
+                        Console.WriteLine($"Ispitanik {participantId} - pocinjem slanje...");
 
                         proxy.StartSession(new EegMeta
                         {
@@ -34,15 +34,13 @@ namespace Client
                             SchemaVersion = "1.0"
                         });
 
-                        Console.WriteLine($"Pocetak sesije za ispitanika: {participantId}, ukupno redova: {samples.Count}");
-
                         foreach (var sample in samples)
                         {
                             proxy.PushSample(sample);
                         }
 
-                        string endStatus = proxy.EndSession();
-                        Console.WriteLine($"Sesija zavrsena za ispitanika {participantId}: {endStatus}");
+                        proxy.EndSession();
+                        Console.WriteLine($"Ispitanik {participantId} - gotovo.");
                     }
                 }
                 catch (FaultException ex)
