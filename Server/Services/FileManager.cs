@@ -53,6 +53,7 @@ namespace Server.Services
         {
             string date = DateTime.Now.ToString("yyyy-MM-dd");
             string rejectsPath = Path.Combine(_dataPath, _currentParticipantId, date, "rejects.csv");
+            bool isNew = !File.Exists(rejectsPath);
 
             string rawLine = $"{sample.Timestamp:dd/MM/yyyy HH:mm:ss},{sample.AF3},{sample.T7},{sample.Pz},{sample.T8},{sample.AF4}," +
                              $"{sample.Attention},{sample.Engagement},{sample.Excitement},{sample.Interest},{sample.Relaxation},{sample.Stress}," +
@@ -60,6 +61,9 @@ namespace Server.Services
 
             using (StreamWriter rejectWriter = new StreamWriter(rejectsPath, append: true))
             {
+                if (isNew)
+                    rejectWriter.WriteLine("Time,Reason,RawLine");
+
                 rejectWriter.WriteLine($"{DateTime.Now:dd/MM/yyyy HH:mm:ss},{reason},{rawLine}");
             }
         }
@@ -85,14 +89,7 @@ namespace Server.Services
             if (!_disposed)
             {
                 if (disposing)
-                {
                     CloseSession();
-                    if (_sessionWriter != null)
-                    {
-                        _sessionWriter.Dispose();
-                        _sessionWriter = null;
-                    }
-                }
                 _disposed = true;
             }
         }

@@ -19,7 +19,7 @@ namespace Client.Services
 
             string[] files = Directory.GetFiles(folderPath, "*.csv", SearchOption.AllDirectories);
             files = files.OrderBy(f => int.Parse(Path.GetFileName(f).Split('_')[1])).ToArray();
-            
+
             foreach (string filePath in files)
             {
                 string fileName = Path.GetFileName(filePath);
@@ -29,6 +29,7 @@ namespace Client.Services
                 List<EegSample> samples = ReadFile(filePath);
                 result.Add((participantId, samples));
             }
+
             return result;
         }
 
@@ -47,6 +48,7 @@ namespace Client.Services
                 {
                     if (rowIndex >= 100)
                         break;
+
                     try
                     {
                         string[] columns = line.Split(',');
@@ -73,7 +75,6 @@ namespace Client.Services
                         };
 
                         samples.Add(sample);
-                        rowIndex++;
                     }
                     catch (Exception ex)
                     {
@@ -81,6 +82,10 @@ namespace Client.Services
                         {
                             logWriter.WriteLine($"{DateTime.Now} | Fajl: {filePath} | Red: {rowIndex} | Greška: {ex.Message} | Sirov red: {line}");
                         }
+                    }
+                    finally
+                    {
+                        rowIndex++;
                     }
                 }
             }

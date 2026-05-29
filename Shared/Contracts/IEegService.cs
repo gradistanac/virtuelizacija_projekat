@@ -13,12 +13,16 @@ namespace Common.Contracts
     public interface IEegService
     {
         [OperationContract]
+        [FaultContract(typeof(ValidationFault))]
         string StartSession(EegMeta meta);
+
         [OperationContract]
         [FaultContract(typeof(DataFormatFault))]
         [FaultContract(typeof(ValidationFault))]
         string PushSample(EegSample sample);
+
         [OperationContract]
+        [FaultContract(typeof(ValidationFault))]
         string EndSession();
     }
 }

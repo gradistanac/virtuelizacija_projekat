@@ -16,12 +16,20 @@ namespace Server.Services
         private bool _disposed = false;
         private FileManager _fileManager;
 
-        public string EndSession()
+        public string StartSession(EegMeta meta)
         {
+            if (meta == null)
+                throw new FaultException<ValidationFault>(
+                    new ValidationFault { Message = "Meta ne sme biti null." });
+            if (string.IsNullOrWhiteSpace(meta.ParticipantId))
+                throw new FaultException<ValidationFault>(
+                    new ValidationFault { Message = "ParticipantId ne sme biti prazan." });
+
             _lastRowIndex = -1;
-            _fileManager.CloseSession();
-            Console.WriteLine("Zavrsen prenos.");
-            return "COMPLETED";
+            _fileManager = new FileManager();
+            _fileManager.OpenSession(meta);
+            Console.WriteLine($"Sesija pokrenuta za ispitanika {meta.ParticipantId}.");
+            return "ACK";
         }
 
         public string PushSample(EegSample sample)
@@ -87,24 +95,16 @@ namespace Server.Services
             return "IN_PROGRESS";
         }
 
-        public string StartSession(EegMeta meta)
+        public string EndSession()
         {
-            if (meta == null)
+            if (_fileManager == null)
                 throw new FaultException<ValidationFault>(
-                    new ValidationFault { Message = "Meta ne sme biti null." });
-            if (string.IsNullOrWhiteSpace(meta.ParticipantId))
-                throw new FaultException<ValidationFault>(
-                    new ValidationFault { Message = "ParticipantId ne sme biti null." });
+                    new ValidationFault { Message = "Nema aktivne sesije." });
 
             _lastRowIndex = -1;
-            _fileManager = new FileManager();
-            _fileManager.OpenSession(meta);
-            return "ACK";
-        }
-
-        ~EegService()
-        {
-            Dispose(false);
+            _fileManager.CloseSession();
+            Console.WriteLine("Zavrsen prenos.");
+            return "COMPLETED";
         }
 
         public void Dispose()
@@ -127,6 +127,11 @@ namespace Server.Services
                 }
                 _disposed = true;
             }
+        }
+
+        ~EegService()
+        {
+            Dispose(false);
         }
     }
 }
