@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Configuration;
 using System.Linq;
 using System.ServiceModel;
 using System.Text;
@@ -15,6 +16,27 @@ namespace Server.Services
         private int _lastRowIndex = -1;
         private bool _disposed = false;
         private FileManager _fileManager;
+        private EegSample _lastSample = null;
+
+        // Pragovi iz konfiguracije
+        private readonly int _batteryLowThreshold;
+        private readonly int _contactQualityMin;
+        private readonly double _stressSpikeThreshold;
+        private readonly long _timestampSkewMaxMs;
+
+        // Eventi
+        public event Action<string> OnTransferStarted;
+        public event Action<EegSample> OnSampleReceived;
+        public event Action<string> OnTransferCompleted;
+        public event Action<string> OnWarningRaised;
+
+        public EegService()
+        {
+            _batteryLowThreshold = int.Parse(ConfigurationManager.AppSettings["BatteryLowThreshold"]);
+            _contactQualityMin = int.Parse(ConfigurationManager.AppSettings["ContactQualityMin"]);
+            _stressSpikeThreshold = double.Parse(ConfigurationManager.AppSettings["StressSpikeThreshold"], System.Globalization.CultureInfo.InvariantCulture);
+            _timestampSkewMaxMs = long.Parse(ConfigurationManager.AppSettings["TimestampSkewMaxMs"]);
+        }
 
         public string StartSession(EegMeta meta)
         {
@@ -26,9 +48,11 @@ namespace Server.Services
                     new ValidationFault { Message = "ParticipantId ne sme biti prazan." });
 
             _lastRowIndex = -1;
+            _lastSample = null;
             _fileManager = new FileManager();
             _fileManager.OpenSession(meta);
-            Console.WriteLine($"Sesija pokrenuta za ispitanika {meta.ParticipantId}.");
+
+            OnTransferStarted?.Invoke(meta.ParticipantId);
             return "ACK";
         }
 
@@ -89,8 +113,54 @@ namespace Server.Services
                     new ValidationFault { Message = "Metrike moraju biti između 0 i 1." });
             }
 
+            // Analitika 10 — ContactQuality, Battery, TimeSkew
+            if (sample.ContactQuality < _contactQualityMin)
+            {
+                string msg = $"[PoorContactWarning] Ispitanik: {sample.RowIndex} | ContactQuality={sample.ContactQuality} < {_contactQualityMin} | Timestamp={sample.Timestamp}";
+                OnWarningRaised?.Invoke(msg);
+                _fileManager.WriteReject(sample, $"PoorContactWarning: ContactQuality={sample.ContactQuality}");
+            }
+
+            if (sample.Battery < _batteryLowThreshold)
+            {
+                string msg = $"[LowBatteryWarning] Battery={sample.Battery} < {_batteryLowThreshold} | RowIndex={sample.RowIndex} | Timestamp={sample.Timestamp}";
+                OnWarningRaised?.Invoke(msg);
+                _fileManager.WriteReject(sample, $"LowBatteryWarning: Battery={sample.Battery}");
+            }
+
+            if (_lastSample != null)
+            {
+                long skewMs = (long)Math.Abs((sample.Timestamp - _lastSample.Timestamp).TotalMilliseconds);
+                if (skewMs > _timestampSkewMaxMs)
+                {
+                    string msg = $"[TimeSkewWarning] Razmak={skewMs}ms > {_timestampSkewMaxMs}ms | RowIndex={sample.RowIndex} | Timestamp={sample.Timestamp}";
+                    OnWarningRaised?.Invoke(msg);
+                    _fileManager.WriteReject(sample, $"TimeSkewWarning: skew={skewMs}ms");
+                }
+
+                // Analitika 9 — DeltaStress i DeltaRelaxation
+                double deltaStress = sample.Stress - _lastSample.Stress;
+                if (Math.Abs(deltaStress) > _stressSpikeThreshold)
+                {
+                    string smer = deltaStress > 0 ? "porast" : "pad";
+                    string msg = $"[StressSpike] {smer} za {Math.Abs(deltaStress):F4} | RowIndex={sample.RowIndex} | Stress: {_lastSample.Stress:F4} → {sample.Stress:F4} | Timestamp={sample.Timestamp}";
+                    OnWarningRaised?.Invoke(msg);
+                }
+
+                double deltaRelaxation = sample.Relaxation - _lastSample.Relaxation;
+                if (Math.Abs(deltaRelaxation) > _stressSpikeThreshold)
+                {
+                    string smer = deltaRelaxation > 0 ? "porast" : "pad";
+                    string msg = $"[RelaxationSpike] {smer} za {Math.Abs(deltaRelaxation):F4} | RowIndex={sample.RowIndex} | Relaxation: {_lastSample.Relaxation:F4} → {sample.Relaxation:F4} | Timestamp={sample.Timestamp}";
+                    OnWarningRaised?.Invoke(msg);
+                }
+            }
+
             _lastRowIndex = sample.RowIndex;
+            _lastSample = sample;
             _fileManager.WriteSample(sample);
+
+            OnSampleReceived?.Invoke(sample);
             Console.WriteLine($"Prenos u toku... (red {sample.RowIndex})");
             return "IN_PROGRESS";
         }
@@ -102,8 +172,10 @@ namespace Server.Services
                     new ValidationFault { Message = "Nema aktivne sesije." });
 
             _lastRowIndex = -1;
+            _lastSample = null;
             _fileManager.CloseSession();
-            Console.WriteLine("Zavrsen prenos.");
+
+            OnTransferCompleted?.Invoke("Prenos završen.");
             return "COMPLETED";
         }
 
