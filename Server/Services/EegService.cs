@@ -195,7 +195,6 @@ namespace Server.Services
             _fileManager.WriteSample(sample);
 
             OnSampleReceived?.Invoke(sample);
-            Console.WriteLine($"Prenos u toku... (red {sample.RowIndex})");
             return "IN_PROGRESS";
         }
 

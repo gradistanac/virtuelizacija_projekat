@@ -23,7 +23,7 @@ namespace Server
 
             service.OnSampleReceived += (sample) =>
             {
-                // tiho — konzola vec ispisuje u PushSample
+                Console.WriteLine($"Primljen uzorak: RowIndex={sample.RowIndex} | Timestamp={sample.Timestamp:dd/MM/yyyy HH:mm:ss}");
             };
 
             service.OnTransferCompleted += (msg) =>
