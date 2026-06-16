@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Globalization;
 
 namespace Server.Services
 {
@@ -15,6 +16,8 @@ namespace Server.Services
         private StreamWriter _sessionWriter;
         private bool _disposed = false;
         private string _currentParticipantId;
+        private DateTime _currentSessionDate;
+        private string _rejectsPath;
 
         public FileManager()
         {
@@ -23,48 +26,43 @@ namespace Server.Services
 
         public void OpenSession(EegMeta meta)
         {
-            string date = DateTime.Now.ToString("yyyy-MM-dd");
+            CloseSession();
+
+            _currentSessionDate = meta.SessionDate == default(DateTime)
+                ? DateTime.Today
+                : meta.SessionDate.Date;
+
+            string date = _currentSessionDate.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
             string sessionPath = Path.Combine(_dataPath, meta.ParticipantId, date);
             _currentParticipantId = meta.ParticipantId;
+            _rejectsPath = Path.Combine(sessionPath, "rejects.csv");
 
             if (!Directory.Exists(sessionPath))
                 Directory.CreateDirectory(sessionPath);
 
             string sessionFilePath = Path.Combine(sessionPath, "session.csv");
-            bool isNewFile = !File.Exists(sessionFilePath);
-            _sessionWriter = new StreamWriter(sessionFilePath, append: true);
+            _sessionWriter = new StreamWriter(sessionFilePath, append: false, Encoding.UTF8);
 
-            if (isNewFile)
-                _sessionWriter.WriteLine("Timestamp,AF3,T7,Pz,T8,AF4,Attention,Engagement," +
-                    "Excitement,Interest,Relaxation,Stress,Battery,ContactQuality,SlideIndex,SetIndex,RowIndex");
+            _sessionWriter.WriteLine("Timestamp,AF3,T7,Pz,T8,AF4,Attention,Engagement," +
+                "Excitement,Interest,Relaxation,Stress,Battery,ContactQuality,SlideIndex,SetIndex,RowIndex");
         }
 
         public void WriteSample(EegSample sample)
         {
-            _sessionWriter.WriteLine($"{sample.Timestamp:dd/MM/yyyy HH:mm:ss}," +
-                $"{sample.AF3},{sample.T7},{sample.Pz},{sample.T8},{sample.AF4}," +
-                $"{sample.Attention},{sample.Engagement},{sample.Excitement}," +
-                $"{sample.Interest},{sample.Relaxation},{sample.Stress}," +
-                $"{sample.Battery},{sample.ContactQuality}," +
-                $"{sample.SlideIndex},{sample.SetIndex},{sample.RowIndex}");
+            _sessionWriter.WriteLine(CreateRawLine(sample));
         }
 
         public void WriteReject(EegSample sample, string reason)
         {
-            string date = DateTime.Now.ToString("yyyy-MM-dd");
-            string rejectsPath = Path.Combine(_dataPath, _currentParticipantId, date, "rejects.csv");
-            bool isNew = !File.Exists(rejectsPath);
+            bool isNew = !File.Exists(_rejectsPath);
 
-            string rawLine = $"{sample.Timestamp:dd/MM/yyyy HH:mm:ss},{sample.AF3},{sample.T7},{sample.Pz},{sample.T8},{sample.AF4}," +
-                             $"{sample.Attention},{sample.Engagement},{sample.Excitement},{sample.Interest},{sample.Relaxation},{sample.Stress}," +
-                             $"{sample.Battery},{sample.ContactQuality},{sample.SlideIndex},{sample.SetIndex},{sample.RowIndex}";
-
-            using (StreamWriter rejectWriter = new StreamWriter(rejectsPath, append: true))
+            using (StreamWriter rejectWriter = new StreamWriter(_rejectsPath, append: true, Encoding.UTF8))
             {
                 if (isNew)
                     rejectWriter.WriteLine("Time,Reason,RawLine");
 
-                rejectWriter.WriteLine($"{DateTime.Now:dd/MM/yyyy HH:mm:ss},{reason},{rawLine}");
+                rejectWriter.WriteLine(
+                    $"{FormatTimestamp(DateTime.Now)},{EscapeCsv(reason)},{EscapeCsv(CreateRawLine(sample))}");
             }
         }
 
@@ -76,6 +74,38 @@ namespace Server.Services
                 _sessionWriter.Close();
                 _sessionWriter = null;
             }
+        }
+
+        private static string CreateRawLine(EegSample sample)
+        {
+            return string.Join(",",
+                FormatTimestamp(sample.Timestamp),
+                sample.AF3.ToString(CultureInfo.InvariantCulture),
+                sample.T7.ToString(CultureInfo.InvariantCulture),
+                sample.Pz.ToString(CultureInfo.InvariantCulture),
+                sample.T8.ToString(CultureInfo.InvariantCulture),
+                sample.AF4.ToString(CultureInfo.InvariantCulture),
+                sample.Attention.ToString(CultureInfo.InvariantCulture),
+                sample.Engagement.ToString(CultureInfo.InvariantCulture),
+                sample.Excitement.ToString(CultureInfo.InvariantCulture),
+                sample.Interest.ToString(CultureInfo.InvariantCulture),
+                sample.Relaxation.ToString(CultureInfo.InvariantCulture),
+                sample.Stress.ToString(CultureInfo.InvariantCulture),
+                sample.Battery.ToString(CultureInfo.InvariantCulture),
+                sample.ContactQuality.ToString(CultureInfo.InvariantCulture),
+                sample.SlideIndex.ToString(CultureInfo.InvariantCulture),
+                sample.SetIndex.ToString(CultureInfo.InvariantCulture),
+                sample.RowIndex.ToString(CultureInfo.InvariantCulture));
+        }
+
+        private static string EscapeCsv(string value)
+        {
+            return $"\"{value.Replace("\"", "\"\"")}\"";
+        }
+
+        private static string FormatTimestamp(DateTime value)
+        {
+            return value.ToString("dd/MM/yyyy HH:mm:ss", CultureInfo.InvariantCulture);
         }
 
         public void Dispose()

@@ -13,9 +13,9 @@ namespace Client.Services
     {
         private readonly string _logPath = "client_log.txt";
 
-        public List<(string participantId, List<EegSample> samples)> ReadAllFiles(string folderPath)
+        public List<(string participantId, string fileName, List<EegSample> samples)> ReadAllFiles(string folderPath)
         {
-            var result = new List<(string participantId, List<EegSample> samples)>();
+            var result = new List<(string participantId, string fileName, List<EegSample> samples)>();
 
             string[] files = Directory.GetFiles(folderPath, "*.csv", SearchOption.AllDirectories);
             files = files.OrderBy(f => int.Parse(Path.GetFileName(f).Split('_')[1])).ToArray();
@@ -27,10 +27,18 @@ namespace Client.Services
                 string participantId = parts[1];
 
                 List<EegSample> samples = ReadFile(filePath);
-                result.Add((participantId, samples));
+                result.Add((participantId, fileName, samples));
             }
 
             return result;
+        }
+
+        public void LogError(string message)
+        {
+            using (StreamWriter logWriter = new StreamWriter(_logPath, append: true))
+            {
+                logWriter.WriteLine($"{DateTime.Now:dd/MM/yyyy HH:mm:ss} | {message}");
+            }
         }
 
         public List<EegSample> ReadFile(string filePath)
@@ -46,12 +54,11 @@ namespace Client.Services
 
                 while ((line = reader.ReadLine()) != null)
                 {
-                    if (rowIndex >= 100)
-                        break;
-
                     try
                     {
                         string[] columns = line.Split(',');
+                        if (columns.Length < 16)
+                            throw new FormatException("CSV red nema očekivanih 16 kolona.");
 
                         EegSample sample = new EegSample
                         {
@@ -78,10 +85,7 @@ namespace Client.Services
                     }
                     catch (Exception ex)
                     {
-                        using (StreamWriter logWriter = new StreamWriter(_logPath, append: true))
-                        {
-                            logWriter.WriteLine($"{DateTime.Now} | Fajl: {filePath} | Red: {rowIndex} | Greška: {ex.Message} | Sirov red: {line}");
-                        }
+                        LogError($"Fajl: {filePath} | Red: {rowIndex} | Greška: {ex.Message} | Sirov red: {line}");
                     }
                     finally
                     {

@@ -19,5 +19,7 @@ namespace Common.Models
         public int TotalRows { get; set; }
         [DataMember]
         public string SchemaVersion { get; set; }
+        [DataMember]
+        public DateTime SessionDate { get; set; }
     }
 }
